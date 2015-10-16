@@ -6,8 +6,8 @@ import java.util.concurrent.Semaphore;
  */
 public class SecondSet extends CustomSet {
 
-    public SecondSet(Set<Double> set, int startIndex, int endIndex, Semaphore semaphore1, Semaphore semaphore2) {
-        super(set, startIndex, endIndex, semaphore1, semaphore2);
+    public SecondSet(Double[] array, int startIndex, int endIndex, Semaphore semaphore1, Semaphore semaphore2) {
+        super(array, startIndex, endIndex, semaphore1, semaphore2);
     }
 
     @Override

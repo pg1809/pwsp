@@ -10,7 +10,7 @@ public class CustomSet implements Runnable {
 
     private int startIndex;
 
-    private int endIndex;
+    protected int endIndex;
 
     protected Semaphore semaphore1;
 
@@ -21,15 +21,15 @@ public class CustomSet implements Runnable {
     }
 
     private void sort() {
-        System.out.println(Arrays.toString(array));
+        System.out.println("Przed sortowaniem: " + Arrays.toString(array));
 
         Arrays.sort(array, startIndex, endIndex);
 
-        System.out.println(Arrays.toString(array));
+        System.out.println("Po sortowaniu: " + Arrays.toString(array));
     }
 
-    public CustomSet(Set<Double> set, int startIndex, int endIndex, Semaphore semaphore1, Semaphore semaphore2) {
-        array = set.toArray(new Double[set.size()]);
+    public CustomSet(Double[] array, int startIndex, int endIndex, Semaphore semaphore1, Semaphore semaphore2) {
+        this.array = array;
         this.startIndex = startIndex;
         this.endIndex = endIndex;
         this.semaphore1 = semaphore1;
