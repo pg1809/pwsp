@@ -44,6 +44,8 @@ public class SetManager extends Thread {
                 barrier.resumeFromBarrier();
 
                 if (elementsComparator.compare(spaceOfElements[elemToChangeIdx], spaceOfElements[another.elemToChangeIdx]) > 0) {
+                    System.out.println("After execution: " + Arrays.toString(spaceOfElements));
+                    readWriteSemaphore.release();
                     return;
                 }
                 readWriteSemaphore.release();
@@ -61,10 +63,7 @@ public class SetManager extends Thread {
 
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
-            System.out.println("After execution: " + Arrays.toString(spaceOfElements));
-            readWriteSemaphore.release();
-        }
+        } 
     }
 
     private int findElementToChangeIdx() {
