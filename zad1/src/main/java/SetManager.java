@@ -1,80 +1,62 @@
-import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 /**
- * Created by Piotr Grzelak on 2015-10-17.
+ * Created by Piotr Grzelak on 2015-10-20.
  */
 public class SetManager extends Thread {
 
-    private static Semaphore changeSemaphore = new Semaphore(1, true);
+    private List<Double> set;
 
-    private static ReusableBarrier barrier = new ReusableBarrier(2);
-
-    private double[] spaceOfElements;
-
-    private int setBeginningIdx;
-
-    private int setSize;
+    private Double candidateForChange;
 
     private SetManager another;
 
-    private int elemToChangeIdx;
+    private Semaphore bufferNotEmpty;
 
-    private Semaphore readWriteSemaphore;
+    private Semaphore bufferNotFull;
 
     private Comparator<Double> elementsComparator;
 
-    public SetManager(int setBeginningIdx, int setSize, double[] spaceOfElements) {
-        this.setBeginningIdx = setBeginningIdx;
-        this.setSize = setSize;
-        this.spaceOfElements = spaceOfElements;
-
-        readWriteSemaphore = new Semaphore(1, true);
+    public SetManager(List<Double> set) {
+        super();
+        this.set = set;
+        bufferNotEmpty = new Semaphore(0);
+        bufferNotFull = new Semaphore(1);
     }
 
     @Override
     public void run() {
         try {
             while (true) {
-                readWriteSemaphore.acquire();
-                elemToChangeIdx = findElementToChangeIdx();
+                double tmp = findCandidateForChange();
+                bufferNotFull.acquire();
+                candidateForChange = tmp; //findCandidateForChange();
+                bufferNotEmpty.release();
 
-                barrier.waitAtBarrier();
-                barrier.resumeFromBarrier();
-
-                if (elementsComparator.compare(spaceOfElements[elemToChangeIdx], spaceOfElements[another.elemToChangeIdx]) > 0) {
-                    System.out.println("After execution: " + Arrays.toString(spaceOfElements));
-                    readWriteSemaphore.release();
+                another.bufferNotEmpty.acquire();
+                if (elementsComparator.compare(candidateForChange, another.candidateForChange) > 0) {
                     return;
+                } else {
+                    set.add(another.candidateForChange);
                 }
-                readWriteSemaphore.release();
-
-                another.readWriteSemaphore.acquire();
-                changeSemaphore.acquire();
-                if (elementsComparator.compare(spaceOfElements[elemToChangeIdx], spaceOfElements[another.elemToChangeIdx]) <= 0) {
-                    double tmp = spaceOfElements[elemToChangeIdx];
-                    spaceOfElements[elemToChangeIdx] = spaceOfElements[another.elemToChangeIdx];
-                    spaceOfElements[another.elemToChangeIdx] = tmp;
-                }
-                changeSemaphore.release();
-                another.readWriteSemaphore.release();
+                another.bufferNotFull.release();
+                set.remove(candidateForChange);
             }
-
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } 
+        }
     }
 
-    private int findElementToChangeIdx() {
-        int idx = setBeginningIdx;
-        for (int i = setBeginningIdx; i < setBeginningIdx + setSize; ++i) {
-            if (elementsComparator.compare(spaceOfElements[i], spaceOfElements[idx]) <= 0) {
-                idx = i;
+    private Double findCandidateForChange() {
+        Double candidate = set.get(0);
+        for (Double element : set) {
+            if (elementsComparator.compare(element, candidate) <= 0) {
+                candidate = element;
             }
         }
-
-        return idx;
+        return candidate;
     }
 
     public void setAnother(SetManager another) {
@@ -83,5 +65,10 @@ public class SetManager extends Thread {
 
     public void setElementsComparator(Comparator<Double> elementsComparator) {
         this.elementsComparator = elementsComparator;
+    }
+
+    public void reset() {
+        bufferNotEmpty = new Semaphore(0);
+        bufferNotFull = new Semaphore(1);
     }
 }
