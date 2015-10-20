@@ -1,31 +1,23 @@
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Semaphore;
+import java.util.*;
 
 /**
  * Created by Lukasz on 2015-10-15.
  */
 public class Main {
 
-    public static void main(String[] args) {
-        double[] array = {1.0, 6.0, 200.0, 99.0, 0.3, 5.0, 4.0, 3.0, 0.1};
+    public static void main(String[] args) throws InterruptedException {
 
-        int s = 4;
-        int t = 5;
+        Scanner scanner = new Scanner(System.in).useLocale(Locale.ENGLISH);
+        List<Double> S = new ArrayList<>();
+        List<Double> T = new ArrayList<>();
 
-//        Semaphore semaphore1 = new Semaphore(1, true);
-//        Semaphore semaphore2 = new Semaphore(1, true);
-//
-//        Thread firstSetThread = new Thread(new FirstSet(array, 0, s, semaphore1, semaphore2));
-//        Thread secondSetThread = new Thread(new SecondSet(array, s, s+t, semaphore1, semaphore2));
-//
-//        firstSetThread.start();
-//        secondSetThread.start();
+        SetManager SManager = new SetManager(S);
+        SetManager TManager = new SetManager(T);
 
-        SetManager firstSetManager = new SetManager(0, s, array);
-        firstSetManager.setElementsComparator((Double first, Double second) -> {
+        SManager.setAnother(TManager);
+        TManager.setAnother(SManager);
+
+        SManager.setElementsComparator((Double first, Double second) -> {
             if (first < second) {
                 return 1;
             } else if (first == second) {
@@ -34,9 +26,7 @@ public class Main {
                 return -1;
             }
         });
-
-        SetManager secondSetManager = new SetManager(s, t, array);
-        secondSetManager.setElementsComparator((Double first, Double second) -> {
+        TManager.setElementsComparator((Double first, Double second) -> {
             if (first > second) {
                 return 1;
             } else if (first == second) {
@@ -46,10 +36,29 @@ public class Main {
             }
         });
 
-        firstSetManager.setAnother(secondSetManager);
-        secondSetManager.setAnother(firstSetManager);
+        while (scanner.hasNext()) {
+            int sSize = scanner.nextInt();
+            for (int i = 0; i < sSize; ++i) {
+                S.add(scanner.nextDouble());
+            }
+            int tSize = scanner.nextInt();
+            for (int i = 0; i < tSize; ++i) {
+                T.add(scanner.nextDouble());
+            }
 
-        firstSetManager.start();
-        secondSetManager.start();
+            SManager.start();
+            TManager.start();
+
+            SManager.join();
+            TManager.join();
+
+            System.out.println(Arrays.toString(S.toArray()));
+            System.out.println(Arrays.toString(T.toArray()));
+            S.clear();
+            T.clear();
+
+            SManager.reset();
+            TManager.reset();
+        }
     }
 }
