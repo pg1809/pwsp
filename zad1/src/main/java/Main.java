@@ -11,32 +11,8 @@ public class Main {
         List<Double> S = new ArrayList<>();
         List<Double> T = new ArrayList<>();
 
-        SetManager SManager = new SetManager(S);
-        SetManager TManager = new SetManager(T);
-
-        SManager.setAnother(TManager);
-        TManager.setAnother(SManager);
-
-        SManager.setElementsComparator((Double first, Double second) -> {
-            if (first < second) {
-                return 1;
-            } else if (first == second) {
-                return 0;
-            } else {
-                return -1;
-            }
-        });
-        TManager.setElementsComparator((Double first, Double second) -> {
-            if (first > second) {
-                return 1;
-            } else if (first == second) {
-                return 0;
-            } else {
-                return -1;
-            }
-        });
-
         while (scanner.hasNext()) {
+
             int sSize = scanner.nextInt();
             for (int i = 0; i < sSize; ++i) {
                 S.add(scanner.nextDouble());
@@ -45,6 +21,31 @@ public class Main {
             for (int i = 0; i < tSize; ++i) {
                 T.add(scanner.nextDouble());
             }
+
+            SetManager SManager = new SetManager(S);
+            SetManager TManager = new SetManager(T);
+
+            SManager.setAnother(TManager);
+            TManager.setAnother(SManager);
+
+            SManager.setElementsComparator((Double first, Double second) -> {
+                if (first < second) {
+                    return 1;
+                } else if (first == second) {
+                    return 0;
+                } else {
+                    return -1;
+                }
+            });
+            TManager.setElementsComparator((Double first, Double second) -> {
+                if (first > second) {
+                    return 1;
+                } else if (first == second) {
+                    return 0;
+                } else {
+                    return -1;
+                }
+            });
 
             SManager.start();
             TManager.start();
@@ -56,9 +57,6 @@ public class Main {
             System.out.println(Arrays.toString(T.toArray()));
             S.clear();
             T.clear();
-
-            SManager.reset();
-            TManager.reset();
         }
     }
 }

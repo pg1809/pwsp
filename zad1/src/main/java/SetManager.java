@@ -1,5 +1,4 @@
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -19,20 +18,26 @@ public class SetManager extends Thread {
 
     private Comparator<Double> elementsComparator;
 
+    private Queue<Double> toChange;
+
     public SetManager(List<Double> set) {
         super();
         this.set = set;
         bufferNotEmpty = new Semaphore(0);
         bufferNotFull = new Semaphore(1);
+        toChange = new ArrayDeque<>();
     }
 
     @Override
     public void run() {
         try {
+            set.sort(elementsComparator);
+            set.stream().forEach(element -> toChange.add(element));
             while (true) {
-                double tmp = findCandidateForChange();
                 bufferNotFull.acquire();
-                candidateForChange = tmp; //findCandidateForChange();
+                if (!toChange.isEmpty()) {
+                    candidateForChange = toChange.poll();
+                }
                 bufferNotEmpty.release();
 
                 another.bufferNotEmpty.acquire();
@@ -49,26 +54,11 @@ public class SetManager extends Thread {
         }
     }
 
-    private Double findCandidateForChange() {
-        Double candidate = set.get(0);
-        for (Double element : set) {
-            if (elementsComparator.compare(element, candidate) <= 0) {
-                candidate = element;
-            }
-        }
-        return candidate;
-    }
-
     public void setAnother(SetManager another) {
         this.another = another;
     }
 
     public void setElementsComparator(Comparator<Double> elementsComparator) {
         this.elementsComparator = elementsComparator;
-    }
-
-    public void reset() {
-        bufferNotEmpty = new Semaphore(0);
-        bufferNotFull = new Semaphore(1);
     }
 }
