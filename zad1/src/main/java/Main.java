@@ -47,14 +47,19 @@ public class Main {
                 }
             });
 
+            long start = System.nanoTime();
+
             SManager.start();
             TManager.start();
 
             SManager.join();
             TManager.join();
 
-            System.out.println(Arrays.toString(S.toArray()));
-            System.out.println(Arrays.toString(T.toArray()));
+            long elapsedTime = System.nanoTime() - start;
+
+//            System.out.println(Arrays.toString(S.toArray()));
+//            System.out.println(Arrays.toString(T.toArray()));
+            System.out.println(elapsedTime);
             S.clear();
             T.clear();
         }
