@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -7,17 +9,24 @@ public class Main {
 
     private static int producersCount;
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
+
         Scanner scanner = new Scanner(System.in);
         producersCount = scanner.nextInt();
-        Buffer buffer = new Buffer(producersCount);
-        for(int i=0; i<producersCount; i++){
-            Producer producer = new Producer(buffer, i);
-            Thread producerThread = new Thread(producer);
-            producerThread.start();
+
+        List<Compartment> buffer = new ArrayList<>(producersCount);
+        List<Thread> producers = new ArrayList<>(producersCount);
+
+        for (int i = 0; i < producersCount; i++) {
+            Compartment compartment = new Compartment();
+            buffer.add(compartment);
+            Thread producerThread = new Thread(new Producer(compartment));
+            producers.add(producerThread);
         }
-        Consumer consumer = new Consumer(buffer);
-        Thread consumerThread = new Thread(consumer);
+
+        Thread consumerThread = new Thread(new Consumer(buffer));
+
+        producers.stream().forEach(thread -> thread.start());
         consumerThread.start();
     }
 }

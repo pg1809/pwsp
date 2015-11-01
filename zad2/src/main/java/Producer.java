@@ -3,19 +3,21 @@
  */
 public class Producer implements Runnable {
 
+    private static int nextIndex = 0;
+
     private int index;
 
-    private Buffer buffer;
+    private Compartment myCompartment;
 
-    public Producer(Buffer buffer, int index) {
-        this.buffer = buffer;
-        this.index = index;
+    public Producer(Compartment myCompartment) {
+        this.myCompartment = myCompartment;
+        index = nextIndex++;
     }
 
     @Override
     public void run() {
         while(true){
-            buffer.put("Proces " + index, index);
+            myCompartment.putMessage("Proces " + index);
         }
     }
 }
