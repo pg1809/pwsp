@@ -28,6 +28,9 @@ public class Banker {
     // Sum of all clients' allocation
     private int allocationSum;
 
+    // Helper variable to print additional message if process requested possible amount of resources, but it would cause deadlock
+    private boolean deadlockDetected;
+
     // Lock to make Banker a monitor
     private Lock lock = new ReentrantLock();
 
@@ -75,6 +78,8 @@ public class Banker {
         need[clientNumber] -= request;
         allocation[clientNumber] += request;
 
+        deadlockDetected = false;
+
         for(int i=0; i<clientsCount; i++){
             // Find first thread that can finish
             for(int j=0; j<clientsCount; j++){
@@ -99,6 +104,7 @@ public class Banker {
         for(int i=0; i<clientsCount; i++){
             if(!canFinish[i]){
                 isStateSafe = false;
+                deadlockDetected = true;
                 break;
             }
         }
@@ -106,9 +112,11 @@ public class Banker {
         return isStateSafe;
     }
 
-    public boolean requestResources(int clientNumber, int request){
-        lock.lock();
+    public synchronized boolean requestResources(int clientNumber, int request){
         if(!isStateSafe(clientNumber, request)){
+            if(deadlockDetected){
+                System.out.println("Granting request of client " + clientNumber + " would cause deadlock");
+            }
             return false;
         }
 
@@ -116,19 +124,16 @@ public class Banker {
         allocation[clientNumber] += request;
         need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
 
-        lock.unlock();
         return true;
     }
 
-    public void releaseResources(int clientNumber, int release){
-        lock.lock();
+    public synchronized void releaseResources(int clientNumber, int release){
         System.out.println("Client " + clientNumber + " releasing " + release);
 
         available += release;
         allocation[clientNumber] -= release;
         need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
 
-        lock.unlock();
     }
 
 }

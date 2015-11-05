@@ -27,7 +27,7 @@ public class Client implements Runnable{
         while(true) {
 
             try {
-                Thread.sleep(random.nextInt(2000));
+                Thread.sleep(random.nextInt(1000));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -35,7 +35,7 @@ public class Client implements Runnable{
 
             if (banker.requestResources(clientNumber, request)) {
                 try {
-                    Thread.sleep(random.nextInt(2000));
+                    Thread.sleep(random.nextInt(1000));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
