@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -8,21 +9,40 @@ public class Main {
     public static void main(String[] args){
         Scanner scanner = new Scanner(System.in);
 
-        // Banker initialization
-        int bankerCapital = scanner.nextInt();
-        Banker banker = new Banker(bankerCapital);
-        Thread bankerThread = new Thread(banker);
-        bankerThread.start();
+        int clientsCount = scanner.nextInt();
 
-        // Clients initialization
-        int clientCount = scanner.nextInt();
-        for(int i=0; i<clientCount; i++){
-            int clientMax = scanner.nextInt();
-            while(clientMax > bankerCapital){
-                System.out.println("Client's max request higher than banker capital!");
-                clientMax = scanner.nextInt();
+        System.out.println("Number of clients: " + clientsCount);
+
+        int maxAvailable = scanner.nextInt();
+
+        System.out.println("Max available: " + maxAvailable);
+
+        int[] maxDemand = new int[clientsCount];
+
+        for(int i=0; i<clientsCount; i++){
+            maxDemand[i] = scanner.nextInt();
+            while(maxDemand[i] > maxAvailable){
+                maxDemand[i] = scanner.nextInt();
             }
-            Client client = new Client(clientMax, banker);
+        }
+
+        System.out.println("Max array: " + Arrays.toString(maxDemand));
+
+        int[] allocation = new int[clientsCount];
+
+        for(int i=0; i<clientsCount; i++){
+            allocation[i] = scanner.nextInt();
+            while(allocation[i] > maxDemand[i]){
+                allocation[i] = scanner.nextInt();
+            }
+        }
+
+        System.out.println("Allocation array: " + Arrays.toString(allocation));
+
+        Banker banker = new Banker(clientsCount, maxAvailable, allocation, maxDemand);
+
+        for(int i=0; i<clientsCount; i++){
+            Client client = new Client(maxDemand[i], i, banker);
             Thread clientThread = new Thread(client);
             clientThread.start();
         }
