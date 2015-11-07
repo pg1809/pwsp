@@ -71,14 +71,18 @@ public class BufferManager extends Thread {
     private void putMessage(String message, int compartmentIdx) {
         if (buffer[compartmentIdx] == null) {
             buffer[compartmentIdx] = message;
-            System.out.println("Wstawiono wiadomosc: " + message);
+            System.out.println("Wstawiono wiadomosc: " + message + " do skrytki: " + compartmentIdx);
+        } else {
+            System.out.println("Skrytka: " + compartmentIdx + " jest pelna. Nie wstawiono wiadomosci.");
         }
     }
 
     private void removeMessage(int compartmentIdx) {
         if (buffer[compartmentIdx] != null) {
-            System.out.println("Usuwanie wiadomosci: " + buffer[compartmentIdx]);
+            System.out.println("Usuwanie wiadomosci: " + buffer[compartmentIdx] + " ze skrytki: " + compartmentIdx);
             buffer[compartmentIdx] = null;
+        } else {
+            System.out.println("Skrytka: " + compartmentIdx + " jest pusta. Nie ma co usuwac.");
         }
     }
 }
