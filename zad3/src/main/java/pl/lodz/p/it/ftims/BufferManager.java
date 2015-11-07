@@ -16,7 +16,9 @@ public class BufferManager extends Thread {
 
     private Lock lock = new ReentrantLock();
 
-    private Queue<Task> tasksQueue = new LinkedList<Task>();
+    private Condition tasksToProcess = lock.newCondition();
+
+    private Queue<Task> tasksQueue = new LinkedList<>();
 
     public BufferManager(int bufferSize) {
         super();
@@ -25,24 +27,27 @@ public class BufferManager extends Thread {
 
     @Override
     public void run() {
-        while (true) {
-            lock.lock();
-            if (tasksQueue.isEmpty()) {
+        try {
+            while (true) {
+                lock.lock();
+                if (tasksQueue.isEmpty()) {
+                    tasksToProcess.await();
+                }
+                Task task = tasksQueue.poll();
                 lock.unlock();
-                continue;
-            }
-            Task task = tasksQueue.poll();
-            lock.unlock();
 
-            if (task.getType() == Task.TaskType.INSERT) {
-                putMessage(task.getMessage(), task.getIndex());
-            } else {
-                removeMessage(task.getIndex());
-            }
+                if (task.getType() == Task.TaskType.INSERT) {
+                    putMessage(task.getMessage(), task.getIndex());
+                } else {
+                    removeMessage(task.getIndex());
+                }
 
-            lock.lock();
-            task.getTaskCompleted().signal();
-            lock.unlock();
+                lock.lock();
+                task.getTaskCompleted().signalAll();
+                lock.unlock();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -50,6 +55,7 @@ public class BufferManager extends Thread {
         try {
             lock.lock();
             tasksQueue.add(task);
+            tasksToProcess.signalAll();
             task.getTaskCompleted().await();
         } catch (InterruptedException e) {
             e.printStackTrace();
