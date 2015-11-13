@@ -1,8 +1,16 @@
 package pl.lodz.p.it.ftims;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,58 +22,34 @@ public class BufferManager extends Thread {
 
     private String[] buffer;
 
-    private Lock lock = new ReentrantLock();
+    private ServerSocket serverSocket;
 
-    private Condition tasksToProcess = lock.newCondition();
-
-    private Queue<Task> tasksQueue = new LinkedList<>();
-
-    public BufferManager(int bufferSize) {
+    public BufferManager(int bufferSize, int port) throws IOException {
         super();
         buffer = new String[bufferSize];
+        serverSocket = new ServerSocket(port);
     }
 
     @Override
     public void run() {
-        try {
-            while (true) {
-                lock.lock();
-                if (tasksQueue.isEmpty()) {
-                    tasksToProcess.await();
-                }
-                Task task = tasksQueue.poll();
-                lock.unlock();
+
+        while (true) {
+            try (Socket socket = serverSocket.accept();
+                 ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+                 ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());) {
+                Task task = (Task) inputStream.readObject();
 
                 if (task.getType() == Task.TaskType.INSERT) {
                     putMessage(task.getMessage(), task.getIndex());
-                } else {
+                } else if (task.getType() == Task.TaskType.REMOVE) {
                     removeMessage(task.getIndex());
                 }
+                outputStream.writeBoolean(true);
 
-                lock.lock();
-                task.getTaskCompleted().signalAll();
-                lock.unlock();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
-    }
-
-    public void processTask(Task task) {
-        try {
-            lock.lock();
-            tasksQueue.add(task);
-            tasksToProcess.signalAll();
-            task.getTaskCompleted().await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public Condition getCondition() {
-        return lock.newCondition();
     }
 
     private void putMessage(String message, int compartmentIdx) {

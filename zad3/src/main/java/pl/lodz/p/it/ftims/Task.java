@@ -1,13 +1,14 @@
 package pl.lodz.p.it.ftims;
 
+import java.io.Serializable;
 import java.util.concurrent.locks.Condition;
 
 /**
  * Created by Piotr Grzelak on 2015-11-06.
  */
-public class Task {
+public class Task implements Serializable {
 
-    public enum TaskType {
+    public enum TaskType implements Serializable {
         INSERT, REMOVE;
     }
 
@@ -17,13 +18,10 @@ public class Task {
 
     private TaskType type;
 
-    private Condition taskCompleted;
-
-    public Task(String message, int index, TaskType type, Condition taskCompleted) {
+    public Task(String message, int index, TaskType type) {
         this.message = message;
         this.index = index;
         this.type = type;
-        this.taskCompleted = taskCompleted;
     }
 
     public String getMessage() {
@@ -32,10 +30,6 @@ public class Task {
 
     public int getIndex() {
         return index;
-    }
-
-    public Condition getTaskCompleted() {
-        return taskCompleted;
     }
 
     public TaskType getType() {
