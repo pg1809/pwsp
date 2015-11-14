@@ -5,15 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.util.*;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by Piotr Grzelak on 2015-11-06.
@@ -22,19 +13,19 @@ public class BufferManager extends Thread {
 
     private String[] buffer;
 
-    private ServerSocket serverSocket;
+    private ServerSocket selectSocket;
 
     public BufferManager(int bufferSize, int port) throws IOException {
         super();
         buffer = new String[bufferSize];
-        serverSocket = new ServerSocket(port);
+        selectSocket = new ServerSocket(port);
     }
 
     @Override
     public void run() {
 
         while (true) {
-            try (Socket socket = serverSocket.accept();
+            try (Socket socket = selectSocket.accept();
                  ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
                  ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());) {
                 Task task = (Task) inputStream.readObject();
