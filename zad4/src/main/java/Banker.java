@@ -54,7 +54,7 @@ public class Banker {
 
         System.out.println("Allocation sum: " + allocationSum);
 
-        available = maxAvailable - allocationSum;
+        available = this.maxAvailable - allocationSum;
 
         System.out.println("Available: " + available);
     }
@@ -112,27 +112,37 @@ public class Banker {
         return isStateSafe;
     }
 
-    public synchronized boolean requestResources(int clientNumber, int request){
-        if(!isStateSafe(clientNumber, request)){
-            if(deadlockDetected){
-                System.out.println("Granting request of client " + clientNumber + " would cause deadlock");
+    public boolean requestResources(int clientNumber, int request){
+        try{
+            lock.lock();
+            if(!isStateSafe(clientNumber, request)){
+                if(deadlockDetected){
+                    System.out.println("Granting request of client " + clientNumber + " would cause deadlock");
+                }
+                return false;
             }
-            return false;
+
+            available -= request;
+            allocation[clientNumber] += request;
+            need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        available -= request;
-        allocation[clientNumber] += request;
-        need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
-
-        return true;
     }
 
-    public synchronized void releaseResources(int clientNumber, int release){
-        System.out.println("Client " + clientNumber + " releasing " + release);
+    public void releaseResources(int clientNumber, int release){
+        try{
+            lock.lock();
+            System.out.println("Client " + clientNumber + " releasing " + release);
 
-        available += release;
-        allocation[clientNumber] -= release;
-        need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
+            available += release;
+            allocation[clientNumber] -= release;
+            need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
+        } finally {
+            lock.unlock();
+        }
 
     }
 

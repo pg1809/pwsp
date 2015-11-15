@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.Phaser;
 
 /**
  * Created by Lukasz on 2015-10-30.
@@ -40,9 +41,10 @@ public class Main {
         System.out.println("Allocation array: " + Arrays.toString(allocation));
 
         Banker banker = new Banker(clientsCount, maxAvailable, allocation, maxDemand);
+        Phaser phaser = new Phaser();
 
         for(int i=0; i<clientsCount; i++){
-            Client client = new Client(maxDemand[i], i, banker);
+            Client client = new Client(maxDemand[i], allocation[i], i, banker, phaser);
             Thread clientThread = new Thread(client);
             clientThread.start();
         }
