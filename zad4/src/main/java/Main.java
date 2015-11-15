@@ -7,44 +7,43 @@ import java.util.concurrent.Phaser;
  */
 public class Main {
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        int clientsCount = scanner.nextInt();
+        int clientsNumber = scanner.nextInt();
 
-        System.out.println("Number of clients: " + clientsCount);
+        System.out.println("Number of clients: " + clientsNumber);
 
         int maxAvailable = scanner.nextInt();
 
         System.out.println("Max available: " + maxAvailable);
 
-        int[] maxDemand = new int[clientsCount];
+        int[] maxDemand = new int[clientsNumber];
 
-        for(int i=0; i<clientsCount; i++){
+        for (int i = 0; i < clientsNumber; i++) {
             maxDemand[i] = scanner.nextInt();
-            while(maxDemand[i] > maxAvailable){
+            while (maxDemand[i] > maxAvailable) {
                 maxDemand[i] = scanner.nextInt();
             }
         }
 
         System.out.println("Max array: " + Arrays.toString(maxDemand));
 
-        int[] allocation = new int[clientsCount];
+        int[] allocation = new int[clientsNumber];
 
-        for(int i=0; i<clientsCount; i++){
+        for (int i = 0; i < clientsNumber; i++) {
             allocation[i] = scanner.nextInt();
-            while(allocation[i] > maxDemand[i]){
+            while (allocation[i] > maxDemand[i]) {
                 allocation[i] = scanner.nextInt();
             }
         }
 
         System.out.println("Allocation array: " + Arrays.toString(allocation));
 
-        Banker banker = new Banker(clientsCount, maxAvailable, allocation, maxDemand);
-        Phaser phaser = new Phaser();
+        Banker banker = new Banker(clientsNumber, maxAvailable, allocation, maxDemand);
 
-        for(int i=0; i<clientsCount; i++){
-            Client client = new Client(maxDemand[i], allocation[i], i, banker, phaser);
+        for (int i = 0; i < clientsNumber; i++) {
+            Client client = new Client(maxDemand[i], allocation[i], i, banker);
             Thread clientThread = new Thread(client);
             clientThread.start();
         }

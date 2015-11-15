@@ -1,9 +1,11 @@
+import java.util.Random;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Lukasz on 2015-10-30.
  */
-public class Client implements Runnable{
+public class Client implements Runnable {
 
     private int maxDemand;
 
@@ -15,29 +17,25 @@ public class Client implements Runnable{
 
     private Banker banker;
 
-    private Phaser phaser;
-
-    public Client(int maxDemand, int allocation, int clientNumber, Banker banker, Phaser phaser) {
+    public Client(int maxDemand, int allocation, int clientNumber, Banker banker) {
         this.maxDemand = maxDemand;
         this.allocation = allocation;
         this.clientNumber = clientNumber;
         this.banker = banker;
-        this.phaser = phaser;
-
-        phaser.register();
     }
 
     @Override
     public void run() {
-        while(true) {
-            request = maxDemand - allocation;
-
-            if (banker.requestResources(clientNumber, request)) {
+        Random r = new Random();
+        AtomicInteger grantedRequestNum = new AtomicInteger(0);
+        while (true) {
+            if (allocation == maxDemand) {
                 banker.releaseResources(clientNumber, maxDemand);
-                phaser.arriveAndDeregister();
-                return;
+                allocation = 0;
             }
-            phaser.arriveAndAwaitAdvance();
+            request = r.nextInt(maxDemand - allocation) + 1;
+            banker.requestResources(clientNumber, request);
+            allocation += request;
         }
     }
 }
