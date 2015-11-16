@@ -35,8 +35,6 @@ public class Banker {
     // Lock to make Banker a monitor
     private Lock lock = new ReentrantLock(true);
 
-    private Condition stateSafe = lock.newCondition();
-
     public Banker(int clientsNumber, int maxAvailable, int[] allocation, int[] maxDemand) {
         this.clientsNumber = clientsNumber;
         this.maxAvailable = maxAvailable;
@@ -63,11 +61,13 @@ public class Banker {
     }
 
     private boolean isStateSafe(int clientNumber, int request) {
-        System.out.println("Client " + clientNumber + " requesting " + request);
+        System.out.println("Client " + clientNumber + " has " + allocation[clientNumber] + " and is requesting " + request);
         System.out.println("Available: " + available);
 
+        deadlockDetected = false;
+
         if (request > available) {
-            System.out.println("Request cannot be granted");
+            System.out.println("Not enough resources to grant request");
             return false;
         }
 
@@ -80,8 +80,6 @@ public class Banker {
         work -= request;
         need[clientNumber] -= request;
         allocation[clientNumber] += request;
-
-        deadlockDetected = false;
 
         for (int i = 0; i < clientsNumber; i++) {
             // Find first thread that can finish
@@ -118,18 +116,15 @@ public class Banker {
     public void requestResources(int clientNumber, int request) {
         try {
             lock.lock();
-            while (!isStateSafe(clientNumber, request)) {
+            if (!isStateSafe(clientNumber, request)) {
                 if (deadlockDetected) {
                     System.out.println("Granting request of client " + clientNumber + " would cause deadlock");
                 }
-                stateSafe.await();
+            } else {
+                available -= request;
+                allocation[clientNumber] += request;
+                need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
             }
-
-            available -= request;
-            allocation[clientNumber] += request;
-            need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         } finally {
             lock.unlock();
         }
@@ -143,10 +138,16 @@ public class Banker {
             available += release;
             allocation[clientNumber] -= release;
             need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
-            stateSafe.signalAll();
         } finally {
             lock.unlock();
         }
     }
 
+    public int getClientAllocation(int clientNumber){
+        return allocation[clientNumber];
+    }
+
+    public int getClientMaxDemand(int clientNumber){
+        return maxDemand[clientNumber];
+    }
 }

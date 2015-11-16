@@ -7,35 +7,38 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Client implements Runnable {
 
-    private int maxDemand;
-
-    private int allocation;
-
     private int clientNumber;
 
     private int request;
 
     private Banker banker;
 
-    public Client(int maxDemand, int allocation, int clientNumber, Banker banker) {
-        this.maxDemand = maxDemand;
-        this.allocation = allocation;
+    private Phaser phaser;
+
+    public Client(int clientNumber, Banker banker, Phaser phaser) {
         this.clientNumber = clientNumber;
         this.banker = banker;
+        this.phaser = phaser;
+
+        phaser.register();
     }
 
     @Override
     public void run() {
-        Random r = new Random();
-        AtomicInteger grantedRequestNum = new AtomicInteger(0);
+        Random random = new Random();
         while (true) {
-            if (allocation == maxDemand) {
+            int allocation = banker.getClientAllocation(clientNumber);
+            int maxDemand = banker.getClientMaxDemand(clientNumber);
+            if (allocation == maxDemand){
                 banker.releaseResources(clientNumber, maxDemand);
-                allocation = 0;
+                phaser.arriveAndDeregister();
+                System.out.println("Client " + clientNumber + " acquired all demanded resources.");
+                return;
             }
-            request = r.nextInt(maxDemand - allocation) + 1;
+            request = random.nextInt(maxDemand - allocation) + 1;
             banker.requestResources(clientNumber, request);
-            allocation += request;
+
+            phaser.arriveAndAwaitAdvance();
         }
     }
 }

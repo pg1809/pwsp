@@ -41,9 +41,10 @@ public class Main {
         System.out.println("Allocation array: " + Arrays.toString(allocation));
 
         Banker banker = new Banker(clientsNumber, maxAvailable, allocation, maxDemand);
+        Phaser phaser = new Phaser();
 
         for (int i = 0; i < clientsNumber; i++) {
-            Client client = new Client(maxDemand[i], allocation[i], i, banker);
+            Client client = new Client(i, banker, phaser);
             Thread clientThread = new Thread(client);
             clientThread.start();
         }
