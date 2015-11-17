@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Phaser;
 
 /**
@@ -41,9 +42,10 @@ public class Main {
         System.out.println("Allocation array: " + Arrays.toString(allocation));
 
         Banker banker = new Banker(clientsNumber, maxAvailable, allocation, maxDemand);
+        CyclicBarrier barrier = new CyclicBarrier(clientsNumber);
 
         for (int i = 0; i < clientsNumber; i++) {
-            Client client = new Client(maxDemand[i], allocation[i], i, banker);
+            Client client = new Client(maxDemand[i], allocation[i], i, banker, barrier);
             Thread clientThread = new Thread(client);
             clientThread.start();
         }

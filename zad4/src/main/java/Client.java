@@ -1,4 +1,6 @@
 import java.util.Random;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,25 +19,33 @@ public class Client implements Runnable {
 
     private Banker banker;
 
-    public Client(int maxDemand, int allocation, int clientNumber, Banker banker) {
+    private CyclicBarrier barrier;
+
+    public Client(int maxDemand, int allocation, int clientNumber, Banker banker, CyclicBarrier barrier) {
         this.maxDemand = maxDemand;
         this.allocation = allocation;
         this.clientNumber = clientNumber;
         this.banker = banker;
+        this.barrier = barrier;
     }
 
     @Override
     public void run() {
         Random r = new Random();
-        AtomicInteger grantedRequestNum = new AtomicInteger(0);
-        while (true) {
-            if (allocation == maxDemand) {
-                banker.releaseResources(clientNumber, maxDemand);
-                allocation = 0;
+        try {
+            while (true) {
+                if (allocation == maxDemand) {
+                    banker.releaseResources(clientNumber, maxDemand);
+                    allocation = 0;
+                    barrier.await();
+                }
+                request = r.nextInt(maxDemand - allocation) + 1;
+                if (banker.requestResources(clientNumber, request)) {
+                    allocation += request;
+                }
             }
-            request = r.nextInt(maxDemand - allocation) + 1;
-            banker.requestResources(clientNumber, request);
-            allocation += request;
+        } catch (InterruptedException | BrokenBarrierException e) {
+            e.printStackTrace();
         }
     }
 }

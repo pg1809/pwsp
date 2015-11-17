@@ -35,8 +35,6 @@ public class Banker {
     // Lock to make Banker a monitor
     private Lock lock = new ReentrantLock(true);
 
-    private Condition stateSafe = lock.newCondition();
-
     public Banker(int clientsNumber, int maxAvailable, int[] allocation, int[] maxDemand) {
         this.clientsNumber = clientsNumber;
         this.maxAvailable = maxAvailable;
@@ -74,10 +72,10 @@ public class Banker {
         boolean[] canFinish = new boolean[clientsNumber];
 
         // Working copy of available resources
-        int work = available;
+        int availableCopy = available;
 
         // Simulate granting request, to check if the state will be safe
-        work -= request;
+        availableCopy -= request;
         need[clientNumber] -= request;
         allocation[clientNumber] += request;
 
@@ -87,13 +85,13 @@ public class Banker {
             // Find first thread that can finish
             for (int j = 0; j < clientsNumber; j++) {
                 if (!canFinish[j]) {
-                    boolean isSafe = true;
-                    if (need[j] > work) {
-                        isSafe = false;
-                    }
-                    if (isSafe) {
+//                    boolean isSafe = true;
+//                    if (need[j] > availableCopy) {
+//                        isSafe = false;
+//                    }
+                    if (need[j] <= availableCopy) {
                         canFinish[j] = true;
-                        work += allocation[j];
+                        availableCopy += allocation[j];
                     }
                 }
             }
@@ -103,36 +101,31 @@ public class Banker {
         need[clientNumber] += request;
         allocation[clientNumber] -= request;
 
-        boolean isStateSafe = true;
         for (int i = 0; i < clientsNumber; i++) {
             if (!canFinish[i]) {
-                isStateSafe = false;
                 deadlockDetected = true;
-                break;
+                return false;
             }
         }
 
-        return isStateSafe;
+        return true;
     }
 
-    public void requestResources(int clientNumber, int request) {
-        try {
-            lock.lock();
-            while (!isStateSafe(clientNumber, request)) {
-                if (deadlockDetected) {
-                    System.out.println("Granting request of client " + clientNumber + " would cause deadlock");
-                }
-                stateSafe.await();
+    public boolean requestResources(int clientNumber, int request) {
+        lock.lock();
+        if (!isStateSafe(clientNumber, request)) {
+            if (deadlockDetected) {
+                System.out.println("Granting request of client " + clientNumber + " would cause deadlock");
             }
-
-            available -= request;
-            allocation[clientNumber] += request;
-            need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
             lock.unlock();
+            return false;
         }
+
+        available -= request;
+        allocation[clientNumber] += request;
+        need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
+        lock.unlock();
+        return true;
     }
 
     public void releaseResources(int clientNumber, int release) {
@@ -143,7 +136,6 @@ public class Banker {
             available += release;
             allocation[clientNumber] -= release;
             need[clientNumber] = maxDemand[clientNumber] - allocation[clientNumber];
-            stateSafe.signalAll();
         } finally {
             lock.unlock();
         }
